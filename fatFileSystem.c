@@ -29,18 +29,13 @@ void readdisk(const char *filename) {
 }
 
 void writeEncryptedDisk(const char *filename, const char *password) {
-    // Get length of key
     unsigned long keyLength = strlen(password);
-    // Create encrypted virtual disk and set all bytes to 0
     diskblock_t encryptedDisk [MAXBLOCKS];
     memset(encryptedDisk, 0, sizeof(encryptedDisk));
-    // Copy current virtual disk to encrypted disk
     for(int i = 0; i < MAXBLOCKS; i++) {
         memcpy(encryptedDisk[i].data, virtualDisk[i].data, BLOCKSIZE);
     }
 
-    // Go through each byte in encrypted disk and XOR it with password
-    // Skip 0 bytes and special bytes like -1, which are used for our FAT table
     for(int i = 0; i < MAXBLOCKS; i++) {
         for(int j = 0; j < BLOCKSIZE; j++) {
             if(encryptedDisk[i].data[j] != 0xff &&
@@ -51,24 +46,18 @@ void writeEncryptedDisk(const char *filename, const char *password) {
         }
     }
     
-    // Save encrypted virtual disk as a file
     FILE *encryptedFile = fopen(filename, "w");
     fwrite(encryptedDisk, sizeof(encryptedDisk), 1, encryptedFile);
     fclose(encryptedFile);
 }
 
 void readEncryptedDisk(const char *filename, const char *password) {
-    // Read encrypted disk file
     FILE *encryptedFile = fopen(filename, "r");
     unsigned long keyLength = strlen(password);
-    // Put encrypted disk data to encrypted disk diskblock
     diskblock_t encryptedDisk [MAXBLOCKS];
     fread(encryptedDisk, sizeof(encryptedDisk), 1, encryptedFile);
-    // Clean current virtual disk
     memset(virtualDisk, 0, sizeof(encryptedDisk));
     
-    // Go through each byte in encrypted disk and XOR it with password
-    // Skip 0 bytes and special bytes like -1, which are used for our FAT table
     for(size_t i = 0; i < MAXBLOCKS; i++) {
         for(size_t j = 0; j < BLOCKSIZE; j++) {
             if(encryptedDisk[i].data[j] != 0xff &&
@@ -79,11 +68,9 @@ void readEncryptedDisk(const char *filename, const char *password) {
         }
     }
     
-    // Copy decrypted disk to virtual disk
     for(size_t i = 0; i < MAXBLOCKS; i++) {
         memcpy(virtualDisk[i].data, encryptedDisk[i].data, BLOCKSIZE);
     }
-    // Close encrypted disk file
     fclose(encryptedFile);
 }
 
@@ -92,31 +79,22 @@ void writeblock(diskblock_t *block, int block_address) {
 }
 
 void format() {
-    // Wipe all data from virtual disk
     for(size_t i = 0; i < MAXBLOCKS; i++){
         memset(virtualDisk[i].data, 0, BLOCKSIZE);
     }
     
-    // Create block buffer
     diskblock_t block;
 
-    // Clean block buffer
     memset(block.data, 0, BLOCKSIZE);
-    // Put some data to buffer
     strcpy(block.volume.name, "CS3026 Operating Systems Assessment Multi-Threaded");
-    // Initialize mutext
     pthread_mutex_init(&(block.volume.lock), NULL);
-    // Write buffer to virtual disk
     writeblock(&block, 0);
 
-    // Clean block buffer
     memset(block.data, 0, BLOCKSIZE);
-    // Setup root directory and write it to virtual disk
     block.dir.isdir = 1;
     block.dir.nextEntry = 0;
     writeblock(&block, 3);
     
-    // Set all fat entries as unused and save FAT block to virtual disk
     memset(FAT, UNUSED, MAXBLOCKS * 2);
     FAT[0] = ENDOFCHAIN;
     FAT[1] = 2;
@@ -129,15 +107,8 @@ pthread_mutex_t *getVirtualDiskLock(void) {
     return &virtualDisk[0].volume.lock;
 }
 
-/*******************
- FAT table functions
- ********************/
-
-// Load FAT table to memory
 void loadFAT() {
-    // Read first part of fat table
     memcpy(FAT, virtualDisk[1].fat, MAXBLOCKS);
-    // Read second part of fat table
     memcpy(FAT + FATENTRYCOUNT - 1, virtualDisk[2].fat, MAXBLOCKS);
 }
 
@@ -237,10 +208,8 @@ void myfputc(int b, MyFILE *stream) {
     stream->dirEntry->filelength++;
     
     if(stream->pos == BLOCKSIZE - 1) {
-        // Write old block
         writeblock(&stream->buffer, stream->blockno);
         int freeBlockIndex = freeFAT();
-        // Point to next block
         FAT[stream->blockno] = freeBlockIndex;
         FAT[freeBlockIndex] = ENDOFCHAIN;
         saveFAT();
@@ -614,7 +583,6 @@ void mychdir(const char *path) {
     
     char *head, *tail = directoryPath;
     while ((head = strtok_r(tail, "/", &tail))) {
-        // Go though all child directories and if directory is set it
         for(int i = 0; i < parentDirectoryBlock->nextEntry; i++) {
             if(strcmp(parentDirectoryBlock->entrylist[i].name, head) == 0 &&
                parentDirectoryBlock->entrylist[i].isdir) {
@@ -647,7 +615,6 @@ void pwd() {
         int elementCount = 1;
         char **pathElements = malloc(elementCount * sizeof(char*));
         pwdRec(rootDirectoryBlock, pathElements, &elementCount);
-        // Last element is empty so start from second to last element
         for(int i = elementCount - 2; i >= 0; i--) {
             printf("%s/", pathElements[i]);
             free(pathElements[i]);
