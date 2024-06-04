@@ -19,7 +19,7 @@
 
 typedef unsigned char Byte;
 typedef short fatentry_t;
-typedef fatentry_t fatblock_t [FATENTRYCOUNT];
+typedef fatentry_t fatblock_t[FATENTRYCOUNT];
 
 typedef struct direntry {
    int entrylength;
@@ -37,7 +37,7 @@ typedef struct dirblock {
    direntry_t entrylist [DIRENTRYCOUNT];
 } dirblock_t;
 
-typedef Byte datablock_t [BLOCKSIZE];
+typedef Byte datablock_t[BLOCKSIZE];
 
 // Volume block
 typedef struct volumeBlock {
@@ -55,7 +55,7 @@ typedef union block {
 } diskblock_t;
 
 // A list of diskblocks
-extern diskblock_t virtualDisk [MAXBLOCKS];
+extern diskblock_t virtualDisk[MAXBLOCKS];
 
 typedef struct filedescriptor {
     int pos;
@@ -67,9 +67,6 @@ typedef struct filedescriptor {
     direntry_t *dirEntry;
 } MyFILE;
 
-/*******************
- Virtual disk functions
- ********************/
 void format(void);
 void readdisk (const char *filename);
 void writedisk (const char * filename);
@@ -77,17 +74,9 @@ void writeEncryptedDisk(const char *filename, const char *password);
 void readEncryptedDisk(const char *filename, const char *password);
 void cleanVirtualDisk(short firstFATIndex);
 pthread_mutex_t *getVirtualDiskLock(void);
-
-/*******************
- FAT table functions
-********************/
 void loadFAT(void);
 void saveFAT(void);
 int freeFAT(void);
-
-/*******************
- File functions
- ********************/
 MyFILE *myfopen(const char *filename, const char *mode);
 void myfclose(MyFILE *stream);
 void myfputc(int b, MyFILE *stream);
@@ -97,10 +86,6 @@ void copyToVirtualDisk(const char *virtualDiskPath, const char *realDiskPath);
 void copyToRealDisk(const char *realDiskPath, const char *virtualDiskPath);
 int copyFile(const char *source, const char *destination);
 void moveFile(const char *source, const char *destination);
-
-/*******************
- Directory functions
- ********************/
 dirblock_t *findDirectoryBlock(const char *path, char **filename, int modify);
 dirblock_t *getChildDirectoryBlock(dirblock_t *parentDirectoryBlock, const char *childDirectoryName);
 dirblock_t *createDirectoryBlock(dirblock_t *parentDirectoryBlock, const char *directoryName);

@@ -1,127 +1,128 @@
-//
-//  shell.c
-//  CS3026
-//
-//  Created by Edvinas on 18/11/2017.
-//  Copyright © 2017 Edvinas. All rights reserved.
-
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "fatFileSystem.h"
 #include <pthread.h>
+#include <time.h>
 
+#define COMM_COUNT 10
+char command[COMM_COUNT][100] = { "mkdir", "rmdir", "cd", "pwd", "ls", "clear", "touch", "exit", "rm" };
+size_t getCommand(char* str);
 void listDirectory(char *directoryPath);
 void *mt_createFile(void *filePath);
 void *mt_deleteFile(void *filePath);
+char** parsInput(char* str);
 
 int main(int argc, const char * argv[]) {
-    // Format new virtual disk
+
+    system("clear");
+
     format();
-    // Create a directory “/firstdir/seconddir” in the virtual disk
-    mymkdir("/firstdir/seconddir");
-    // Call myfopen( “/firstdir/seconddir/testfile1.txt” )
-    MyFILE *file = myfopen("/firstdir/seconddir/testfile1.txt", "w");
-    myfputc('X', file);
-    myfclose(file);
-    // Call mylistdir(“/firstdir/seconddir”)
-    listDirectory("/firstdir/seconddir");
-    // Change to directory “/firstdir/seconddir”
-    mychdir("/firstdir/seconddir");
-    // Call mylistdir(“/firstdir/seconddir/” ) or mylistdir(“.”)
-    listDirectory("/firstdir/seconddir");
-    // Call myfopen( “testfile2.txt, “w” )
-    MyFILE *file2 = myfopen("testfile2.txt", "w");
-    myfputc('Y', file2);
-    myfclose(file2);
-    // Create directory “thirddir”
-    mymkdir("thirddir");
-    // Call myfopen( “thirddir/testfile3.txt, “w” )
-    MyFILE *file3 = myfopen("thirddir/testfile3.txt", "w");
-    myfputc('Z', file3);
-    myfclose(file3);
-    // Write out virtual disk to “virtualdiskA5_A1_a”
-    writedisk("virtualdiskA5_A1_a");
-    // Call myremove( “testfile1.txt” )
-    myremove("testfile1.txt");
-    // Call myremove( “testfile2.txt” )
-    myremove("testfile2.txt");
-    // Write out virtual disk to “virtualdiskA5_A1_b”
-    writedisk("virtualdiskA5_A1_b");
-    // Call mychdir (thirddir”)
-    mychdir("thirddir");
-    // Call myremove( “testfile3.txt”)
-    myremove("testfile3.txt");
-    // Write out virtual disk to “virtualdiskA5_A1_c”
-    writedisk("virtualdiskA5_A1_c");
-    // Call mychdir( “/firstdir/seconddir”) or mychdir(“..”)
-    mychdir("/firstdir/seconddir");
-    // Call myremdir( “thirddir” )
-    myrmdir("thirddir");
-    // Call mychdir(“/firstdir”)
-    mychdir("/firstdir");
-    // Call myrmdir ( “seconddir” )
-    myrmdir("seconddir");
-    // Call mychdir(“/”) or mychdir(“..”)
-    mychdir("..");
-    // Call myrmdir( “firstdir”)
-    myrmdir("firstdir");
-    // Write out virtual disk to “virtualdiskA5_A1_d”
-    writedisk("virtualdiskA5_A1_d");
-    
-    /*
-    // Copy file from real disk to virtual disk
-    format();
-    copyToVirtualDisk("main/copy.txt", "file.txt");
-    copyToRealDisk("copyFromVirtualDisk.txt", "main/copy.txt");
-    writedisk("virtualdisk_fileCopy");
-    */
-    
-    /*
-    // Copy file within virtual disk
-    format();
-    copyToVirtualDisk("main/copy.txt", "file.txt");
-    copyFile("main/copy.txt", "secondary/othercopy.txt");
-    writedisk("virtualdisk_insideFileCopy");
-    */
-    
-    /*
-     // Move file within virtual disk
-     format();
-     copyToVirtualDisk("main/copy.txt", "file.txt");
-     moveFile("main/copy.txt", "/copy.txt");
-     writedisk("virtualdisk_insideFileMove");
-     */
-    
-    /*
-    // Multi-threaded access
-    format();
-    // Create and start two threads
-    pthread_t first, second;
-    pthread_create(&first, NULL, mt_createFile, "file.txt");
-    pthread_create(&second, NULL, mt_deleteFile, "file.txt");
-    writedisk("virtualdisk_multiThreaded");
-    */
-    
-    
-    // Disk encryption
-    format();
-    // Copy file from hard disk to virtual disk
-    copyToVirtualDisk("main/copy.txt", "file.txt");
-    // Save encrypted disk
-    writeEncryptedDisk("virtualdisk_encrypted", "edvinas");
-    // Try to read disk with wrong password
-    readEncryptedDisk("virtualdisk_encrypted", "wrongpassword");
-    // Save results
-    writedisk("virtualdisk_encrypted_wrong_password");
-    // Try to read disk with correct password
-    readEncryptedDisk("virtualdisk_encrypted", "edvinas");
-    // Save results
-    writedisk("virtualdisk_encrypted_correct_password");
-    
+    readEncryptedDisk("virtualdisk_encrypted", "04060755qW123");
+
+    int fl = 1;
+    MyFILE * file;
+
+    char* inp = (char*)calloc(100,sizeof(char));
+    while(fl){
+        fprintf(stdout, "user@name:");
+        pwd();
+        gets(inp);
+        char** buf = parsInput(inp);
+        size_t command_inp = getCommand(buf[0]);
+        switch (command_inp)
+        {
+        case 0:{
+            mymkdir(buf[1]);
+            mychdir(buf[1]);
+            break;
+        }
+        case 1:{
+            myrmdir(buf[1]);
+            break;
+        }
+        case 2:{
+            mychdir(buf[1]);
+            break;
+        }
+        case 3:{
+            pwd();
+            fprintf(stdout, "\n");
+            break;
+        }
+        case 4:{
+            listDirectory(".");
+            break;
+        }
+        case 5:{
+            system("clear");
+            break;
+        }
+        case 6:{
+            file = myfopen(buf[1], "w");
+            myfclose(file);
+            break;
+        }
+        case 7: {
+            fl = 0;
+            writeEncryptedDisk("virtualdisk_encrypted", "04060755qW123");
+            break;
+        }
+        case 8:{
+            myremove(buf[1]);
+            break;
+        }
+        case 9:{
+            break;
+        }
+        case __SIZE_MAX__:{
+            fprintf(stdout, "%s: command is not found\n", buf[0]);
+            break;
+        }
+        default:
+            break;
+        }
+    }
     return 0;
+
+    
 }
+
+char** parsInput(char* str){
+    size_t count = 0;
+    char** res = (char**)calloc(20,sizeof(char*));
+    for(size_t i = 0; i < 20; ++i){
+        res[i] = (char*)calloc(100,sizeof(char));
+    }
+
+    size_t buf_ptr = 0;
+    for(size_t i = 0; i < strlen(str); ++i){
+        if(str[i] == '\n'){
+            break;
+        }
+        if(str[i] == ' '){
+            buf_ptr = 0;
+            ++count;
+            continue;
+        }
+        res[count][buf_ptr++] = str[i];
+    }
+    return res;
+}
+
+size_t getCommand(char* str){
+    size_t i = 0;
+    for(i; i < COMM_COUNT; ++i){
+        if(strcmp(command[i], str) == 0){
+            return i;
+        }
+    }
+
+    i = __SIZE_MAX__;
+    return i;
+}
+
 
 void *mt_createFile(void *filePath) {
     pthread_mutex_lock(getVirtualDiskLock());
@@ -141,7 +142,6 @@ void *mt_deleteFile(void *filePath) {
 
 void listDirectory(char *directoryPath) {
     char **directoryEntries = mylistdir(directoryPath);
-    printf("Printing contents of %s:\n", directoryPath);
     if(directoryEntries != NULL) {
         int i = 0;
         while(directoryEntries[i] != NULL) {
@@ -152,5 +152,4 @@ void listDirectory(char *directoryPath) {
     } else {
         printf("Directory is empty\n");
     }
-    printf("---------------\n");
 }
